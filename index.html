@@ -257,6 +257,52 @@
         </div>
     </footer>
 
+    <!-- Genie Chat Widget -->
+    <div id="chat-widget" class="chat-widget">
+        <button id="chat-toggle" class="chat-toggle" aria-label="Toggle chat">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+        </button>
+        
+        <div id="chat-panel" class="chat-panel" style="display: none;">
+            <div class="chat-header">
+                <h3>Ask Genie about F1 History</h3>
+                <button id="chat-close" class="chat-close" aria-label="Close chat">&times;</button>
+            </div>
+            
+            <div class="chat-suggestions">
+                <button class="suggestion-btn" data-question="Who won the most championships in F1 history?">Most championships?</button>
+                <button class="suggestion-btn" data-question="Show me the fastest lap times at Monaco">Monaco lap times</button>
+                <button class="suggestion-btn" data-question="Compare Lewis Hamilton and Michael Schumacher statistics">Hamilton vs Schumacher</button>
+            </div>
+            
+            <div id="chat-messages" class="chat-messages">
+                <div class="chat-message bot-message">
+                    <div class="message-content">
+                        <p>👋 Hi! I'm Genie, your F1 data assistant. Ask me anything about Formula 1 history, statistics, drivers, races, and more!</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chat-input-container">
+                <input 
+                    type="text" 
+                    id="chat-input" 
+                    class="chat-input" 
+                    placeholder="Ask about F1 history..."
+                    autocomplete="off"
+                />
+                <button id="chat-send" class="chat-send" aria-label="Send message">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>

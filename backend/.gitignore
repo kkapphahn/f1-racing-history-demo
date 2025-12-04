@@ -1,0 +1,7 @@
+node_modules/
+local.settings.json
+.vscode/
+*.log
+bin/
+obj/
+.DS_Store

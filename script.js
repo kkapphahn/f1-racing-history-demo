@@ -151,3 +151,268 @@ window.addEventListener('load', () => {
 });
 
 console.log('F1 History website loaded successfully!');
+
+// ===== GENIE CHAT FUNCTIONALITY =====
+
+// Configuration - API endpoints are served from same domain by Azure Static Web Apps
+const GENIE_API_BASE = '/api'; // Managed functions in Azure Static Web App
+
+// Chat state
+let currentConversationId = null;
+let isProcessing = false;
+
+// DOM elements
+const chatToggle = document.getElementById('chat-toggle');
+const chatPanel = document.getElementById('chat-panel');
+const chatClose = document.getElementById('chat-close');
+const chatInput = document.getElementById('chat-input');
+const chatSend = document.getElementById('chat-send');
+const chatMessages = document.getElementById('chat-messages');
+const suggestionButtons = document.querySelectorAll('.suggestion-btn');
+
+// Toggle chat panel
+chatToggle.addEventListener('click', () => {
+    const isVisible = chatPanel.style.display === 'flex';
+    chatPanel.style.display = isVisible ? 'none' : 'flex';
+    if (!isVisible) {
+        chatInput.focus();
+    }
+});
+
+chatClose.addEventListener('click', () => {
+    chatPanel.style.display = 'none';
+});
+
+// Handle suggestion buttons
+suggestionButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        const question = btn.getAttribute('data-question');
+        chatInput.value = question;
+        sendMessage();
+    });
+});
+
+// Send message on button click
+chatSend.addEventListener('click', sendMessage);
+
+// Send message on Enter key
+chatInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+
+/**
+ * Send a message to Genie
+ */
+async function sendMessage() {
+    const message = chatInput.value.trim();
+    if (!message || isProcessing) return;
+
+    // Clear input
+    chatInput.value = '';
+    
+    // Add user message to chat
+    addUserMessage(message);
+    
+    // Show typing indicator
+    const typingIndicator = addTypingIndicator();
+    
+    // Disable input during processing
+    setProcessing(true);
+
+    try {
+        let response;
+        
+        if (currentConversationId) {
+            // Continue existing conversation
+            response = await fetch(`${GENIE_API_BASE}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    conversationId: currentConversationId,
+                    message: message
+                })
+            });
+        } else {
+            // Start new conversation
+            response = await fetch(`${GENIE_API_BASE}/startChat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message })
+            });
+        }
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Store conversation ID for follow-up messages
+        if (data.conversationId) {
+            currentConversationId = data.conversationId;
+        }
+
+        // Remove typing indicator
+        typingIndicator.remove();
+
+        // Display response
+        if (data.response) {
+            addBotMessage(data.response);
+        } else {
+            throw new Error('No response received from Genie');
+        }
+
+    } catch (error) {
+        console.error('Error sending message:', error);
+        typingIndicator.remove();
+        addErrorMessage('Sorry, I encountered an error processing your question. Please try again.');
+    } finally {
+        setProcessing(false);
+    }
+}
+
+/**
+ * Add user message to chat
+ */
+function addUserMessage(text) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'chat-message user-message';
+    messageDiv.innerHTML = `
+        <div class="message-content">
+            <p>${escapeHtml(text)}</p>
+        </div>
+    `;
+    chatMessages.appendChild(messageDiv);
+    scrollToBottom();
+}
+
+/**
+ * Add bot message to chat
+ */
+function addBotMessage(response) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'chat-message bot-message';
+    
+    let content = `<div class="message-content">`;
+    
+    // Add text response
+    if (response.text) {
+        content += `<p>${escapeHtml(response.text)}</p>`;
+    }
+    
+    // Add SQL query if available (optional, can be hidden by default)
+    if (response.query) {
+        content += `<div class="message-query">SQL: ${escapeHtml(response.query)}</div>`;
+    }
+    
+    // Add data table if available
+    if (response.data && response.data.rows && response.data.rows.length > 0) {
+        content += formatDataTable(response.data);
+    }
+    
+    content += `</div>`;
+    messageDiv.innerHTML = content;
+    
+    chatMessages.appendChild(messageDiv);
+    scrollToBottom();
+}
+
+/**
+ * Format data as HTML table
+ */
+function formatDataTable(data) {
+    if (!data.schema || !data.rows || data.rows.length === 0) {
+        return '';
+    }
+
+    let table = '<div class="message-data"><table>';
+    
+    // Add headers
+    table += '<thead><tr>';
+    data.schema.forEach(col => {
+        table += `<th>${escapeHtml(col.name)}</th>`;
+    });
+    table += '</tr></thead>';
+    
+    // Add rows (limit to first 10 for display)
+    table += '<tbody>';
+    const rowsToShow = data.rows.slice(0, 10);
+    rowsToShow.forEach(row => {
+        table += '<tr>';
+        row.forEach(cell => {
+            const cellValue = cell === null ? 'NULL' : String(cell);
+            table += `<td>${escapeHtml(cellValue)}</td>`;
+        });
+        table += '</tr>';
+    });
+    table += '</tbody></table>';
+    
+    if (data.rows.length > 10) {
+        table += `<p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-gray);">Showing 10 of ${data.rows.length} rows</p>`;
+    }
+    
+    table += '</div>';
+    return table;
+}
+
+/**
+ * Add typing indicator
+ */
+function addTypingIndicator() {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'chat-message bot-message';
+    messageDiv.id = 'typing-indicator';
+    messageDiv.innerHTML = `
+        <div class="message-content typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    `;
+    chatMessages.appendChild(messageDiv);
+    scrollToBottom();
+    return messageDiv;
+}
+
+/**
+ * Add error message
+ */
+function addErrorMessage(text) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'chat-message bot-message';
+    messageDiv.innerHTML = `
+        <div class="message-content error-message">
+            ${escapeHtml(text)}
+        </div>
+    `;
+    chatMessages.appendChild(messageDiv);
+    scrollToBottom();
+}
+
+/**
+ * Set processing state
+ */
+function setProcessing(processing) {
+    isProcessing = processing;
+    chatInput.disabled = processing;
+    chatSend.disabled = processing;
+}
+
+/**
+ * Scroll chat to bottom
+ */
+function scrollToBottom() {
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+/**
+ * Escape HTML to prevent XSS
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
