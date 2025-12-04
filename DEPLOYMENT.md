@@ -21,11 +21,18 @@ The `/api` folder contains managed Azure Functions that run within the Static We
 Configure these in Azure Portal > Static Web App > Configuration:
 
 ```
-DATABRICKS_HOST=https://your-workspace.cloud.databricks.com
-DATABRICKS_CLIENT_ID=your-service-principal-client-id
-DATABRICKS_CLIENT_SECRET=your-service-principal-secret
+DATABRICKS_HOST=https://your-workspace.azuredatabricks.net
+DATABRICKS_TOKEN=your-personal-access-token
 DATABRICKS_GENIE_SPACE_ID=your-genie-space-id
 ```
+
+### How to Get Your Personal Access Token:
+
+1. In Databricks workspace, click your username (top-right)
+2. Go to "Settings" > "Developer" > "Access tokens"
+3. Click "Generate new token"
+4. Give it a name (e.g., "F1 Chat") and optionally set expiration
+5. Copy the token value immediately (you won't see it again)
 
 ## Local Development
 
