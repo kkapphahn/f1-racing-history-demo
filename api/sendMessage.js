@@ -1,5 +1,5 @@
 const { app } = require('@azure/functions');
-const { sendMessage, pollForCompletion } = require('../lib/genie-client');
+const { sendMessage, pollForCompletion } = require('./lib/genie-client');
 
 app.http('sendMessage', {
     methods: ['POST'],

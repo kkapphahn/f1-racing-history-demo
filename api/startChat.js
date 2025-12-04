@@ -1,5 +1,5 @@
 const { app } = require('@azure/functions');
-const { startConversation, pollForCompletion } = require('../lib/genie-client');
+const { startConversation, pollForCompletion } = require('./lib/genie-client');
 
 app.http('startChat', {
     methods: ['POST'],

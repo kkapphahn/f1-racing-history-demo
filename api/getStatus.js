@@ -1,5 +1,5 @@
 const { app } = require('@azure/functions');
-const { getMessageStatus } = require('../lib/genie-client');
+const { getMessageStatus } = require('./lib/genie-client');
 
 app.http('getStatus', {
     methods: ['GET'],

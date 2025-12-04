@@ -245,10 +245,13 @@ async function sendMessage() {
         }
 
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorText = await response.text();
+            console.error('API Error Response:', errorText);
+            throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
         }
 
         const data = await response.json();
+        console.log('API Response:', data);
         
         // Store conversation ID for follow-up messages
         if (data.conversationId) {
@@ -268,7 +271,7 @@ async function sendMessage() {
     } catch (error) {
         console.error('Error sending message:', error);
         typingIndicator.remove();
-        addErrorMessage('Sorry, I encountered an error processing your question. Please try again.');
+        addErrorMessage(`Error: ${error.message}. Check browser console for details.`);
     } finally {
         setProcessing(false);
     }
